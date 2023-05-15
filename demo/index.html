@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="Ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 15px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            background: linear-gradient(45deg, rgb(218, 218, 218) 25%, transparent 25%, transparent 75%, rgb(218, 218, 218) 75%),
+                linear-gradient(45deg, rgb(218, 218, 218) 25%, transparent 25%, transparent 75%, rgb(218, 218, 218) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            width: fit-content;
+        }
+
+        .canvas-wrapper canvas {
+            position: relative;
+        }
+
+        .container {
+            background-color: rgb(233, 233, 233);
+            margin: 10px;
+            padding: 10px;
+        }
+
+        #file_type {
+            width: 80px;
+            height: 20px;
+        }
+    </style>
+    <title>GAZ_Demo</title>
+</head>
+
+<body>
+    <h1>
+        スキャン・シード・フィル アルゴリズムのデモ
+        <br>
+        背景透過・削除/領域の塗りつぶし
+    </h1>
+    <div class="canvas-wrapper">
+        <canvas id="canvas_main"></canvas>
+    </div>
+    <br>
+    <input type="file" id="selectFile" accept="image/jpeg,image/png,image/webp">
+    <br>
+    <br>
+    <section class="container">
+        <h3>設定</h3>
+        <label>許容する色差の範囲:</label>
+        <input type="range" id="differenceRange_range" name="differenceRange_range" min="0" max="500" step="1" value="100">
+        <input type="number" id="differenceRange_number" name="differenceRange_number" min="0" max="500" step="1" value="100">
+        <br>
+        <br>
+        <label>塗りつぶしの色を選択:</label>
+        <input type="color" name="favorite_color" id="favorite_color">
+        <label for="transparency_range">透明度:</label>
+        <input type="range" id="transparency_range" name="transparency_range" min="0" max="100" step="1" value="0">
+    </section>
+    <button id="back">元に戻す</button>
+    <button id="forward">やり直し</button>
+    <button id="clear">クリア</button>
+    <a href="#" id="downloadbtn">ダウンロード</a>
+
+    <section class="container">
+        <h3>エンコードオプション</h3>
+        <label for="file_type">ファイルの種類:</label>
+        <select name="FileType" id="file_type">
+            <option value="png">png</option>
+            <option value="jpeg">jpeg</option>
+        </select>
+        <br>
+        <br>
+        <label>ファイルの名前:</label>
+        <br>
+        <input type="radio" name="fileName" id="isoriginalNameAnd" checked>
+        <label>元の名前+</label>
+        <input type="text" id="originalNameAnd_input" name="nameInput" required size="20" value="_Resized">
+        <label>+png/jpeg</label>
+        <br>
+        <input type="radio" name="fileName" id="isnewName">
+        <label>別名で保存する:</label>
+        <input type="text" id="newName_input" name="nameInput" required size="20" value="image">
+        <label>+png/jpeg</label>
+        <br>
+        <br>
+        <label for="quality_range">品質:</label>
+        <input type="range" id="quality_range" name="quality_range" min="0" max="1" step="0.01" value="0.92">
+        <input type="number" id="quality_number" name="quality_number" min="0" max="1" step="0.01" value="0.92">
+    </section>
+    <script type="module">
+        import { GAZ } from '../GAZ.js'
+        const selFile = document.getElementById('selectFile'); // input type="file"の要素取得;
+        const canvas = document.querySelector('#canvas_main');
+        const context = canvas.getContext('2d');
+        const encodingOptionsEl = {
+            fileType: document.getElementById('file_type'),
+            quality_range: document.getElementById('quality_range'),
+            quality_number: document.getElementById('quality_number'),
+        }
+        const FileNameEl = {
+            isoriginalNameAnd: document.getElementById('isoriginalNameAnd'),
+            originalNameAnd_input: document.getElementById('originalNameAnd_input'),
+            newName_input: document.getElementById('newName_input'),
+        }
+        const settingsEL = {
+            differenceRange_number: document.getElementById('differenceRange_number'),
+            differenceRange_range: document.getElementById('differenceRange_range'),
+            favorite_color: document.getElementById('favorite_color'),
+            transparency_range:document.getElementById('transparency_range'),
+        }
+        encodingOptionsEl.quality_range.addEventListener('change', (e) => {
+            encodingOptionsEl.quality_number.value = encodingOptionsEl.quality_range.value
+        })
+        encodingOptionsEl.quality_number.addEventListener('change', (e) => {
+            encodingOptionsEl.quality_range.value = encodingOptionsEl.quality_number.value
+        })
+        settingsEL.differenceRange_number.addEventListener('change', (e) => {
+            settingsEL.differenceRange_range.value = settingsEL.differenceRange_number.value
+        })
+        settingsEL.differenceRange_range.addEventListener('change', (e) => {
+            settingsEL.differenceRange_number.value = differenceRange_range.value
+        })
+        let history = new Array();
+        let historyIndex = 0;
+        function back() {
+            if (historyIndex + 1 < history.length) {
+                historyIndex++;
+                context.putImageData(history[historyIndex].ImageData, 0, 0);
+            }
+        }
+        function forward() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                context.putImageData(history[historyIndex].ImageData, 0, 0);
+            }
+        }
+        function clear() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        const removeFileEX = (fileName) => {
+            return fileName.replace(/\.[^/.]+$/, "")
+        }
+        function hex2rgb(hex) {
+            if (hex.slice(0, 1) == "#") hex = hex.slice(1);
+            if (hex.length == 3) hex = hex.slice(0, 1) + hex.slice(0, 1) + hex.slice(1, 2) + hex.slice(1, 2) + hex.slice(2, 3) + hex.slice(2, 3);
+
+            return [hex.slice(0, 2), hex.slice(2, 4), hex.slice(4, 6)].map(function (str) {
+                return parseInt(str, 16);
+            });
+        }
+        window.addEventListener('DOMContentLoaded', function (e) {
+            selFile.addEventListener("change",async function (e) {
+                const loadedfile = e.target.files[0];
+                const reader = new FileReader();
+                reader.readAsDataURL(loadedfile);
+                reader.onload = () => {
+                    const dataUrl = reader.result; // 読み込んだファイルURL
+                    const img = new Image(); // 画像
+                    img.src = dataUrl;
+                    img.onload = () => {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        context.drawImage(img, 0, 0);
+                        const imageData = context.getImageData(0, 0, img.width, img.height);
+                        const data = imageData.data;//一次元配列を返す
+                        const renderer = new GAZ(imageData, context);
+                        history.unshift(renderer);
+                        canvas.addEventListener("click", function (e) {
+                            const mouse_pos = {
+                                x: parseInt(e.offsetX),
+                                y: parseInt(e.offsetY),
+                            };
+                            const transparency=125*parseInt(settingsEL.transparency_range.value, 10)
+                            const color=hex2rgb(settingsEL.favorite_color.value).concat([transparency]);
+                           renderer.ScanlineSeedFill({ x: mouse_pos.x, y: mouse_pos.y, ImageData: history[0].ImageData, difference: differenceRange_number.value,colorAfterApplying:color })
+                                .then(newGAZ => {
+                                    context.putImageData(newGAZ.ImageData, 0, 0);
+                                    history.unshift(newGAZ);
+                                    if (history.length > 10) {
+                                        history.pop();
+                                    }
+
+                                })
+
+                        })
+                        context.putImageData(renderer.ImageData, 0, 0);
+                        document.getElementById('forward').addEventListener('click', forward);
+                        document.getElementById('back').addEventListener('click', back);
+                        document.getElementById('clear').addEventListener('click', clear);
+                        const a = document.getElementById('downloadbtn');
+                        a.addEventListener('click', (e) => {
+                            let newfileName;
+                            if (FileNameEl.isoriginalNameAnd.checked) {
+                                newfileName = `${removeFileEX(loadedfile.name)}${FileNameEl.originalNameAnd_input.value}`
+                            }
+                            else {
+                                newfileName = FileNameEl.newName_input.value.length < 0 ? FileNameEl.newName_input.value : 'image';
+                            }
+                            const fileType = encodingOptionsEl.fileType.value;
+                            const quality = encodingOptionsEl.quality_number.value;
+                            a.href = canvas.toDataURL(`image/${fileType}`, quality); // PNGなら"image/png"
+                            a.download = `${newfileName}.${fileType}`;
+                        })
+
+                    }
+                }
+            }, false);
+        })
+    </script>
+</body>
+
+</html>
