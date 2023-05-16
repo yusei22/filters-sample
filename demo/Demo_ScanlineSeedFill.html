@@ -5,93 +5,73 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            margin: 15px;
-        }
-
-        .canvas-wrapper {
-            position: relative;
-            background: linear-gradient(45deg, rgb(218, 218, 218) 25%, transparent 25%, transparent 75%, rgb(218, 218, 218) 75%),
-                linear-gradient(45deg, rgb(218, 218, 218) 25%, transparent 25%, transparent 75%, rgb(218, 218, 218) 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-            width: fit-content;
-        }
-
-        .canvas-wrapper canvas {
-            position: relative;
-        }
-
-        .container {
-            background-color: rgb(233, 233, 233);
-            margin: 10px;
-            padding: 10px;
-        }
-
-        #file_type {
-            width: 80px;
-            height: 20px;
-        }
-    </style>
-    <title>GAZ_Demo</title>
+    <link rel="stylesheet" href="style.css">
+    <title>GAZ_demo_ScanlineSeedFill</title>
 </head>
 
 <body>
-    <h1>
-        スキャン・シード・フィル アルゴリズムのデモ
+    <h2>
+        GAZ.jsのデモ①
         <br>
-        背景透過・削除/領域の塗りつぶし
-    </h1>
+        スキャン・シード・フィル アルゴリズムによる背景透過・削除/領域の塗りつぶし
+    </h2>
     <div class="canvas-wrapper">
         <canvas id="canvas_main"></canvas>
     </div>
-    <br>
-    <input type="file" id="selectFile" accept="image/jpeg,image/png,image/webp">
-    <br>
-    <br>
+    <section class="container">
+        <input type="file" id="selectFile" accept="image/jpeg,image/png,image/webp">
+    </section>
+    <section class="box">
+        <button id="back">元に戻す</button>
+        <button id="forward">やり直し</button>
+        <button id="clear">クリア</button>
+        <a href="#" id="downloadbtn" class="btn">ダウンロード</a>
+    </section>
     <section class="container">
         <h3>設定</h3>
-        <label>許容する色差の範囲:</label>
-        <input type="range" id="differenceRange_range" name="differenceRange_range" min="0" max="500" step="1" value="100">
-        <input type="number" id="differenceRange_number" name="differenceRange_number" min="0" max="500" step="1" value="100">
-        <br>
-        <br>
-        <label>塗りつぶしの色を選択:</label>
-        <input type="color" name="favorite_color" id="favorite_color">
-        <label for="transparency_range">透明度:</label>
-        <input type="range" id="transparency_range" name="transparency_range" min="0" max="100" step="1" value="0">
+        <div class="box">
+            <label for="differenceRange_range">許容する色差の範囲:</label>
+            <input type="range" id="differenceRange_range" name="differenceRange_range" min="0" max="500" step="1"value="100">
+            <input type="number" id="differenceRange_number" name="differenceRange_number" min="0" max="500" step="1"value="100">
+        </div>
+        <div class="box">
+            <label for="favorite_color">塗りつぶしの色を選択:</label>
+            <input type="color" name="favorite_color" id="favorite_color">
+        </div>
+        <div class="box">
+            <label for="transparency_range">透明度:</label>
+            <input type="range" id="transparency_range" name="transparency_range" min="0" max="100" step="1" value="0">
+        </div>
     </section>
-    <button id="back">元に戻す</button>
-    <button id="forward">やり直し</button>
-    <button id="clear">クリア</button>
-    <a href="#" id="downloadbtn">ダウンロード</a>
-
     <section class="container">
         <h3>エンコードオプション</h3>
-        <label for="file_type">ファイルの種類:</label>
-        <select name="FileType" id="file_type">
-            <option value="png">png</option>
-            <option value="jpeg">jpeg</option>
-        </select>
-        <br>
-        <br>
-        <label>ファイルの名前:</label>
-        <br>
-        <input type="radio" name="fileName" id="isoriginalNameAnd" checked>
-        <label>元の名前+</label>
-        <input type="text" id="originalNameAnd_input" name="nameInput" required size="20" value="_Resized">
-        <label>+png/jpeg</label>
-        <br>
-        <input type="radio" name="fileName" id="isnewName">
-        <label>別名で保存する:</label>
-        <input type="text" id="newName_input" name="nameInput" required size="20" value="image">
-        <label>+png/jpeg</label>
-        <br>
-        <br>
-        <label for="quality_range">品質:</label>
-        <input type="range" id="quality_range" name="quality_range" min="0" max="1" step="0.01" value="0.92">
-        <input type="number" id="quality_number" name="quality_number" min="0" max="1" step="0.01" value="0.92">
+        <div class="box">
+            <label for="file_type">ファイルの種類:</label>
+            <select name="fileType" id="file_type">
+                <option value="png">png</option>
+                <option value="jpeg">jpeg</option>
+            </select>
+        </div>
+        <div class="box">
+            <div>ファイルの名前:</div>
+            <div class="box">
+                <input type="radio" name="fileName" id="isoriginalNameAnd" checked>
+                <label for="originalNameAnd_input">元の名前+</label>
+                <input type="text" id="originalNameAnd_input" name="nameInput" required size="20" value="_Resized">
+                <label>+png/jpeg</label>
+            </div>
+            <div class="box">
+                <input type="radio" name="fileName" id="isnewName">
+                <label for="newName_input">別名で保存する:</label>
+                <input type="text" id="newName_input" name="nameInput" required size="20" value="image">
+                <label>+png/jpeg</label>
+            </div>
+        </div>
+        <div class="box">
+            <label for="quality_range">品質:</label>
+            <input type="range" id="quality_range" name="quality_range" min="0" max="1" step="0.01" value="0.92">
+            <input type="number" id="quality_number" name="quality_number" min="0" max="1" step="0.01" value="0.92">
+        </div>
     </section>
     <script type="module">
         import { GAZ } from '../GAZ.js'
@@ -112,7 +92,7 @@
             differenceRange_number: document.getElementById('differenceRange_number'),
             differenceRange_range: document.getElementById('differenceRange_range'),
             favorite_color: document.getElementById('favorite_color'),
-            transparency_range:document.getElementById('transparency_range'),
+            transparency_range: document.getElementById('transparency_range'),
         }
         encodingOptionsEl.quality_range.addEventListener('change', (e) => {
             encodingOptionsEl.quality_number.value = encodingOptionsEl.quality_range.value
@@ -155,7 +135,7 @@
             });
         }
         window.addEventListener('DOMContentLoaded', function (e) {
-            selFile.addEventListener("change",async function (e) {
+            selFile.addEventListener("change", async function (e) {
                 const loadedfile = e.target.files[0];
                 const reader = new FileReader();
                 reader.readAsDataURL(loadedfile);
@@ -176,9 +156,14 @@
                                 x: parseInt(e.offsetX),
                                 y: parseInt(e.offsetY),
                             };
-                            const transparency=125*parseInt(settingsEL.transparency_range.value, 10)
-                            const color=hex2rgb(settingsEL.favorite_color.value).concat([transparency]);
-                           renderer.ScanlineSeedFill({ x: mouse_pos.x, y: mouse_pos.y, ImageData: history[0].ImageData, difference: differenceRange_number.value,colorAfterApplying:color })
+                            const transparency = 125 * parseInt(settingsEL.transparency_range.value, 10)
+                            const color = hex2rgb(settingsEL.favorite_color.value).concat([transparency]);
+                            history[0].ScanlineSeedFill({
+                                x: mouse_pos.x,
+                                y: mouse_pos.y,
+                                difference: differenceRange_number.value,
+                                colorAfterApplying: color,
+                            })
                                 .then(newGAZ => {
                                     context.putImageData(newGAZ.ImageData, 0, 0);
                                     history.unshift(newGAZ);

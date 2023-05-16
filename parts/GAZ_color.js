@@ -21,8 +21,7 @@ function GetRGBFromArgument(dt0, dt1, dt2, dt3) {
     else {
       R = 0; G = 0; B = 0; A = 0;
       return { R: R, G: G, B: B, A: A }
-    }
-    
+    }  
 }
 function getColorDistance(color1,color2){
         const red = 0.3;

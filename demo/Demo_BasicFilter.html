@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>GAZ_demo_BasicFilter</title>
+</head>
+
+<body>
+    <h2>
+        GAZ.jsのデモ②
+        <br>
+        よくあるフィルタ
+    </h2>
+    <div class="canvas-wrapper">
+        <canvas id="canvas_main"></canvas>
+    </div>
+    <br>
+    <section>
+        <input type="file" id="selectFile" accept="image/jpeg,image/png,image/webp">
+    </section>
+    <script type="module">
+        import { GAZ } from '../GAZ.js'
+        const selFile = document.getElementById('selectFile'); // input type="file"の要素取得;
+        const canvas = document.querySelector('#canvas_main');
+        const context = canvas.getContext('2d');
+        let history = new Array();
+        let historyIndex = 0;
+        window.addEventListener('DOMContentLoaded', function (e) {
+            selFile.addEventListener("change", async function (e) {
+                const loadedfile = e.target.files[0];
+                const reader = new FileReader();
+                reader.readAsDataURL(loadedfile);
+                reader.onload = () => {
+                    const dataUrl = reader.result; // 読み込んだファイルURL
+                    const img = new Image(); // 画像
+                    img.src = dataUrl;
+                    img.onload = () => {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        context.drawImage(img, 0, 0);
+                        const imageData = context.getImageData(0, 0, img.width, img.height);
+                        const data = imageData.data;//一次元配列を返す
+                        const renderer = new GAZ(imageData, context);
+                        history.unshift(renderer);
+                        canvas.addEventListener("click", function (e) {
+                            history[0].Mosaic(10)
+                                .then(newGAZ => {
+                                    context.putImageData(newGAZ.ImageData, 0, 0);
+                                    history.unshift(newGAZ);
+                                    if (history.length > 10) {
+                                        history.pop();
+                                    }
+                                })
+                        })
+                        context.putImageData(renderer.ImageData, 0, 0);
+                    }
+                }
+            }, false);
+        })
+    </script>
+</body>
+
+</html>
