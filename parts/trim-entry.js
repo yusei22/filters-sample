@@ -1,4 +1,4 @@
-function GetRGBFromArgument(dt0, dt1, dt2, dt3) {
+function RGB(dt0, dt1, dt2, dt3) {
     let R, G, B, A
     if (Array.isArray(dt0)) {
       const array=dt0.slice();
@@ -21,13 +21,9 @@ function GetRGBFromArgument(dt0, dt1, dt2, dt3) {
     else {
       R = 0; G = 0; B = 0; A = 0;
       return { R: R, G: G, B: B, A: A }
-    }  
+    }
 }
-function getColorDistance(color1,color2){
-        const red = 0.3;
-        const green = 0.59;
-        const blue = 0.11;
-        const distance = Math.pow(((color2[0] - color1[0]) * red), 2) + Math.pow(((color2[1] - color1[1]) * green), 2) + Math.pow(((color2[2] - color1[2]) * blue), 2);
-        return distance;
+function Number(Number,defaultNumber){
+    
 }
-export{GetRGBFromArgument,getColorDistance}
+export{RGB,}

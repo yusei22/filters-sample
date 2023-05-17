@@ -1,21 +1,12 @@
-import *as Checker from './parts/GAZ_checker.js';
-import *as ColorOP from './parts/GAZ_color.js';
-const createMassage = {
-    argumentError: (validValue) => {
-        return `TypeError:Argument must be a ${validValue} .`
-    },
-    undefinedError: () => {
-        return `TypeError:Argument is undefined`
-    },
-    invalid: (value) => {
-        return `TypeError:${value}is an invalid`
-    }
-}
+import *as Checker from './parts/type-checker.js';
+import *as CreateMassage from './parts/message.js';
+import *as TrimEntry from './parts/trim-entry.js';
 /**
 await new Promise((resolve, reject) => {})
- */
+*/
 export class GAZ {
     constructor(ImageData, Context) {
+        Checker.imageData.isImageData(ImageData);
         this.ImageData = ImageData;
         this.Context = Context;
     };
@@ -27,6 +18,7 @@ export class GAZ {
         return distance;
     };
     Duplicate(ImageData = this.ImageData, Context = this.Context) {
+        if(!Checker.imageData.isImageData(ImageData)){return false};
         const Duplication = Context.createImageData(ImageData);
         const DuplicationPixcelData = Duplication.data
         const PixcelData = ImageData.data;
@@ -111,26 +103,20 @@ export class GAZ {
         const newImageData = Context.createImageData(ImageData);
         const newData = newImageData.data;
         await new Promise((resolve, reject) => {
-            // モザイクの大きさの単位で繰り返す
             for (let y = 0; y < ImageData.height; y += msize) {
                 for (let x = 0; x < ImageData.width; x += msize) {
-                    // モザイクの大きさを計算する
                     let msizex = msize;
                     let msizey = msize;
-                    // モザイクの正方形が右か下にはみ出した場合の処理
                     if (x + msize > ImageData.width) {
                         msizex = ImageData.width - x;
                     }
                     if (y + msize > ImageData.height) {
                         msizey = ImageData.height - y;
                     }
-
-                    // モザイクの長方形内の点の色の平均を計算する
                     let mr = 0;
                     let mg = 0;
                     let mb = 0;
                     let ma = 0;
-                    // imageData, newImageData の点の data のインデックス値
                     let pt;
                     pt = (x + y * ImageData.width) * 4;
                     for (let y2 = 0; y2 < msizey; y2++) {
@@ -140,10 +126,6 @@ export class GAZ {
                             mb += oldData[pt + 2];
                             ma += oldData[pt + 3];
                             pt += 4;
-                            // 下記のほうがわかりやすいが、上記のほうが高速なので上記を採用する
-                            //mr += getr(imageData, x + x2, y + y2);
-                            //mg += getg(imageData, x + x2, y + y2);
-                            //mb += getb(imageData, x + x2, y + y2);
                         }
                         pt += 4 * (ImageData.width - msizex);
                     }
@@ -152,8 +134,6 @@ export class GAZ {
                     mg = Math.floor(mg / dotnum);
                     mb = Math.floor(mb / dotnum);
                     ma = Math.floor(ma / dotnum);
-
-                    // 平均化した色でモザイクの長方形を塗る
                     pt = (x + y * ImageData.width) * 4;
                     for (let y2 = 0; y2 < msizey; y2++) {
                         for (let x2 = 0; x2 < msizex; x2++) {
@@ -162,8 +142,6 @@ export class GAZ {
                             newData[pt + 2] = mb;
                             newData[pt + 3] = ma;
                             pt += 4;
-                            // 下記のほうがわかりやすいが、上記のほうが高速なので上記を採用する
-                            // drawpixel(newImageData, x + x2, y + y2, mr, mg, mb, 255);
                         }
                         pt += 4 * (ImageData.width - msizex);
                     }
@@ -174,6 +152,139 @@ export class GAZ {
 
         return new GAZ(newImageData, Context);
     }
+    async Blur(bsize, ImageData = this.ImageData, Context = this.Context) {
+        // ぼかしの点の数
+        let dotnum = bsize * bsize;
+        const oldData = ImageData.data;
+        const newImageData = Context.createImageData(ImageData);
+        const newData = newImageData.data;
+        await new Promise((resolve, reject) => {
+            let bsize2 = Math.floor(bsize / 2);
+            let ar = new Array();
+            let ag = new Array();
+            let ab = new Array();
+            let aa = new Array();
+            let pt = 0;
+            for (let y = 0; y < ImageData.height; y++) {
+              ar[y] = new Array();
+              ag[y] = new Array();
+              ab[y] = new Array();
+              aa[y] = new Array();
+              for (let x = 0; x < bsize2; x++) {
+                if(oldData[pt + 3]===0){
+                    ar[y][x]=ag[y][x]=ab[y][x]=255
+                }
+                else{
+                    ar[y][x] = oldData[pt];
+                    ag[y][x] = oldData[pt + 1];
+                    ab[y][x] = oldData[pt + 2];
+                }
+                aa[y][x] = oldData[pt + 3];
+              }
+              for (let x = bsize2; x < ImageData.width + bsize2; x++) {
+                if(oldData[pt + 3]===0){
+                    ar[y][x]=ag[y][x]=ab[y][x]=255
+                }
+                else{
+                    ar[y][x] = oldData[pt];
+                    ag[y][x] = oldData[pt + 1];
+                    ab[y][x] = oldData[pt + 2];
+                }
+                aa[y][x] = oldData[pt + 3];
+                pt += 4;
+              }
+              pt -= 4;
+              for (let x = ImageData.width + bsize2; x < ImageData.width + bsize - 1; x++) {
+                if(oldData[pt + 3]===0){
+                    ar[y][x]=ag[y][x]=ab[y][x]=255
+                }
+                else{
+                    ar[y][x] = oldData[pt];
+                    ag[y][x] = oldData[pt + 1];
+                    ab[y][x] = oldData[pt + 2];
+                }
+                aa[y][x] = oldData[pt + 3];
+              }
+              pt += 4;
+            }
+            let br, bg, bb,ba;
+            let ar2 = new Array();
+            let ag2 = new Array();
+            let ab2 = new Array();
+            let aa2 = new Array();
+            for (let y = bsize2; y < ImageData.height + bsize2; y++) {
+              let y2 = y - bsize2;
+              ar2[y] = new Array();
+              ag2[y] = new Array();
+              ab2[y] = new Array();
+              aa2[y] = new Array();
+              br = bb = bg =ba= 0;
+              for (let x = 0; x < bsize; x++) {
+                br += ar[y2][x];
+                bg += ag[y2][x];
+                bb += ab[y2][x];
+                ba += aa[y2][x];
+              }
+              for (let x = 0; x < ImageData.width; x++) {
+                ar2[y][x] = br;
+                ag2[y][x] = bg;
+                ab2[y][x] = bb;
+                aa2[y][x] = ba;
+                br += ar[y2][x + bsize] - ar[y2][x];
+                bg += ag[y2][x + bsize] - ag[y2][x];
+                bb += ab[y2][x + bsize] - ab[y2][x];
+                ba += aa[y2][x + bsize] - aa[y2][x];
+              }
+            }
+            for (let y = 0; y < bsize2; y++) {
+              ar2[y] = new Array();
+              ag2[y] = new Array();
+              ab2[y] = new Array();
+              aa2[y] = new Array();
+              for (let x = 0; x < ImageData.width; x++) {
+                ar2[y][x] = ar2[bsize2][x];
+                ag2[y][x] = ag2[bsize2][x];
+                ab2[y][x] = ab2[bsize2][x];
+                aa2[y][x] = aa2[bsize2][x];
+              }
+            }
+            for (let y = ImageData.height + bsize2; y < ImageData.height + bsize; y++) {
+              ar2[y] = new Array();
+              ag2[y] = new Array();
+              ab2[y] = new Array();
+              aa2[y] = new Array();
+              for (let x = 0; x < ImageData.width; x++) {
+                ar2[y][x] = ar2[ImageData.height][x];
+                ag2[y][x] = ag2[ImageData.height][x];
+                ab2[y][x] = ab2[ImageData.height][x];
+                aa2[y][x] = aa2[ImageData.height][x];
+              }
+            }
+            for (let x = 0; x < ImageData.width; x++) {
+              pt = 4 * x;
+              br = bb = bg =ba= 0;
+              for (let y = 0; y < bsize; y++) {
+                br += ar2[y][x];
+                bg += ag2[y][x];
+                bb += ab2[y][x];
+                ba += aa2[y][x];
+              }
+              for (let y = 0; y < ImageData.height; y++) {
+                newData[pt] = Math.floor(br / dotnum);
+                newData[pt + 1] = Math.floor(bg / dotnum);
+                newData[pt + 2] = Math.floor(bb / dotnum);
+                newData[pt + 3] = Math.floor(ba / dotnum);
+                pt += ImageData.width * 4;
+                br += ar2[y + bsize][x] - ar2[y][x];
+                bg += ag2[y + bsize][x] - ag2[y][x];
+                bb += ab2[y + bsize][x] - ab2[y][x];
+                ba += aa2[y + bsize][x] - aa2[y][x];
+              }
+            }
+            resolve();
+        })
+        return new GAZ(newImageData, Context);
+      }
     async ScanlineSeedFill({ x = 0, y = 0, ImageData = this.ImageData, Context = this.Context, difference = 100, colorAfterApplying = [0, 0, 0, 0] }) {
         const getColorDistance = GAZ.getColorDistance;
         const newImageData = this.Duplicate(ImageData, Context).ImageData;

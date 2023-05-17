@@ -158,7 +158,7 @@
                             };
                             const transparency = 125 * parseInt(settingsEL.transparency_range.value, 10)
                             const color = hex2rgb(settingsEL.favorite_color.value).concat([transparency]);
-                            history[0].ScanlineSeedFill({
+                            history[historyIndex].ScanlineSeedFill({
                                 x: mouse_pos.x,
                                 y: mouse_pos.y,
                                 difference: differenceRange_number.value,
@@ -167,6 +167,7 @@
                                 .then(newGAZ => {
                                     context.putImageData(newGAZ.ImageData, 0, 0);
                                     history.unshift(newGAZ);
+                                    historyIndex=0;
                                     if (history.length > 10) {
                                         history.pop();
                                     }

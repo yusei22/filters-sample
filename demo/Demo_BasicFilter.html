@@ -43,11 +43,11 @@
                         canvas.height = img.height;
                         context.drawImage(img, 0, 0);
                         const imageData = context.getImageData(0, 0, img.width, img.height);
-                        const data = imageData.data;//一次元配列を返す
+                        const data = imageData.data;
                         const renderer = new GAZ(imageData, context);
                         history.unshift(renderer);
                         canvas.addEventListener("click", function (e) {
-                            history[0].Mosaic(10)
+                            history[0].Blur(10)
                                 .then(newGAZ => {
                                     context.putImageData(newGAZ.ImageData, 0, 0);
                                     history.unshift(newGAZ);

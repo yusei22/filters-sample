@@ -16,4 +16,14 @@ const array={
         return false;
     }
 }
-export{array}
+const imageData={
+    isImageData:(imagedata)=>{
+        if(imagedata instanceof ImageData){
+            return true;
+        }
+        else{
+            return  false;
+        }
+    },
+}
+export{array,imageData}
