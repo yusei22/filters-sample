@@ -156,9 +156,10 @@
                                 x: parseInt(e.offsetX),
                                 y: parseInt(e.offsetY),
                             };
-                            const transparency = 125 * parseInt(settingsEL.transparency_range.value, 10)
+                            console.log(settingsEL.transparency_range.value)
+                            const transparency = Math.floor(255 * parseInt(settingsEL.transparency_range.value, 10)*0.01)
                             const color = hex2rgb(settingsEL.favorite_color.value).concat([transparency]);
-                            history[historyIndex].ScanlineSeedFill({
+                            history[historyIndex].ScanlineSeedFill_NoRecursion({
                                 x: mouse_pos.x,
                                 y: mouse_pos.y,
                                 difference: differenceRange_number.value,

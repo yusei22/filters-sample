@@ -98,6 +98,40 @@ export class GAZ {
             newData[i + 2] = correctify(oldData[i + 2]);
         }
     }
+    async Sharpening(ImageData = this.ImageData, Context = this.Context) {
+        const oldData = ImageData.data;
+        const newImageData = this.Duplicate(ImageData, Context).ImageData;
+        const newData = newImageData.data;
+        const sharpedColor = (color, i) => {
+          // 係数
+          const sub = -1;
+          const main = 10;
+    
+          const prevLine = i - (ImageData.width * 4);
+          const nextLine = i + (ImageData.width * 4);
+    
+          const sumPrevLineColor = (oldData[prevLine - 4 + color] * sub) + (oldData[prevLine + color] * sub) + (oldData[prevLine + 4 + color] * sub);
+          const sumCurrLineColor = (oldData[i - 4 + color] * sub)        + (oldData[i + color] * main)       + (oldData[i + 4 + color] * sub);
+          const sumNextLineColor = (oldData[nextLine - 4 + color] * sub) + (oldData[nextLine + color] * sub) + (oldData[nextLine + 4 + color] * sub);
+          return (sumPrevLineColor + sumCurrLineColor + sumNextLineColor) / 2
+        };
+        await new Promise((resolve, reject) => {
+        // 2行目〜n-1行目
+        for (let i = ImageData.width * 4; i < oldData.length - (ImageData.width * 4); i += 4) {
+            // 2列目〜n-1列目
+            if (i % (ImageData.width * 4) === 0 || i % ((ImageData.width * 4) + 300) === 0) {
+              // nop
+            } else {
+              newData[i] = sharpedColor(0, i);
+              newData[i + 1] = sharpedColor(1, i);
+              newData[i + 2] = sharpedColor(2, i);
+              //data2[i + 3] = 255 * strength*0.01;
+            }
+          };
+          resolve();
+        })
+        return new GAZ(newImageData, Context);
+      }
     async Mosaic(msize, ImageData = this.ImageData, Context = this.Context) {
         const oldData = ImageData.data;
         const newImageData = Context.createImageData(ImageData);
@@ -295,6 +329,7 @@ export class GAZ {
         const firstRedPos = this.getColorIndicesForCoord(x, y);
         const dmRGB = newdata.slice(firstRedPos, firstRedPos + 4)
         const aaRGB = Checker.array.allTypesAre(colorAfterApplying, 'number') ? colorAfterApplying : [0, 0, 0, 0];
+        let Bbuffer=[];
         //let inProcess = new Array(width * height);
         //inProcess.fill(false);
         const lightDifference = difference < 125 ? difference : 124;
@@ -360,10 +395,8 @@ export class GAZ {
             if (trueWasIs_bottom) { buffer.push(redIndex_max + datawidth) };
             buffer.forEach(x => {
                 if (isMatchColor(x)) { return; }
-                //inProcess[x / 4] = true;
                 const seed = scanToLeftRightfromSeed(x);
                 createSeedfromOldMinMax(seed.fillmin, seed.fillmax);
-                //inProcess[x / 4] = false;
             })
             return;
         }
@@ -414,5 +447,131 @@ export class GAZ {
         return newGAZ;
 
     }
-
+    async ScanlineSeedFill_NoRecursion({ x = 0, y = 0, ImageData = this.ImageData, Context = this.Context, difference = 100, colorAfterApplying = [0, 0, 0, 0] }) {
+        const getColorDistance = GAZ.getColorDistance;
+        if(Checker.imageData.isImageData(ImageData)){console.error(CreateMassage.error.ArgumentMustBe(ImageData))}
+        const newImageData = this.Duplicate(ImageData, Context).ImageData;
+        const newdata = newImageData.data;
+        const width = newImageData.width;
+        const height = newImageData.height;
+        const datawidth = width * 4
+        const firstRedPos = this.getColorIndicesForCoord(x, y);
+        const dmRGB = newdata.slice(firstRedPos, firstRedPos + 4)
+        const trimEntryedRGB=TrimEntry.RGB(colorAfterApplying);
+        const aaRGB = [trimEntryedRGB.R,trimEntryedRGB.G,trimEntryedRGB.B,trimEntryedRGB.A]
+        //ここにためて再帰関数使わんでいいようにする!
+        let buffer=[];
+        const lightDifference = difference
+        const indexRightmostColumn = (i) => {
+            return datawidth - (i % datawidth) + i - 4;
+        };
+        const indexLeftmostColumn = (i) => {
+            return i - (i % datawidth);
+        };
+        function fill(i) {
+            newdata[i] = aaRGB[0];
+            newdata[i + 1] = aaRGB[1];
+            newdata[i + 2] = aaRGB[2];
+            newdata[i + 3] = aaRGB[3];
+        }
+        const isMatchColor = (i) => {
+            if (
+                newdata[i] === aaRGB[0] &&
+                newdata[i + 1] === aaRGB[1] &&
+                newdata[i + 2] === aaRGB[2] &&
+                newdata[i + 3] === aaRGB[3]
+            ) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        const isApproximationColor = (i) => {
+            if (
+                getColorDistance([newdata[i], newdata[i + 1], newdata[i + 2]], dmRGB) < difference
+                && Math.abs(newdata[i + 3] - dmRGB[3]) < lightDifference
+            ) {
+                return true;
+            }
+            else {
+                false;
+            }
+        }
+        function createSeedfromOldMinMax(redIndex_min, redIndex_max) {
+            function top(){
+                let trueWasIs = false;
+                for (let i = redIndex_min - datawidth; i <= redIndex_max - datawidth; i += 4) {
+                    if (isApproximationColor(i)) {
+                        trueWasIs = true;
+                    }
+                    else {
+                        const insertIndex=i - 4
+                        if (trueWasIs&&!isMatchColor(insertIndex)) { buffer.push(insertIndex) }
+                        trueWasIs = false;
+                    }
+                }
+                const insertIndex=redIndex_max - datawidth;
+                if (trueWasIs&&!isMatchColor(insertIndex)) { buffer.push(insertIndex) };
+            }
+            function buttom(){
+                let trueWasIs = false;
+                for (let i = redIndex_min + datawidth; i <= redIndex_max + datawidth; i += 4) {
+                    if (isApproximationColor(i)) {
+                        trueWasIs = true;
+                    }
+                    else {
+                        const insertIndex=i - 4
+                        if (trueWasIs&&!isMatchColor(insertIndex)) { buffer.push(insertIndex) }
+                        trueWasIs = false;
+                    }
+                }
+                const insertIndex=redIndex_max + datawidth
+                if (trueWasIs&&!isMatchColor(insertIndex)) { buffer.push(insertIndex) };
+            }
+            top();
+            buttom();
+            return;
+        }
+        function scanToLeftRightfromSeed(redIndex) {
+            const min = indexLeftmostColumn(redIndex);
+            const max = indexRightmostColumn(redIndex);
+            //fillmin, fillmaxの最小を設定
+            let fillmax = redIndex;
+            let fillmin = redIndex;
+            //右
+            for (; fillmax + 4 <= max; fillmax += 4) {
+                if (isApproximationColor(fillmax + 4)) {
+                    fill(fillmax + 4);
+                }
+                else {
+                    break;
+                }
+            }
+            //左
+            for (; fillmin - 4 >= min; fillmin -= 4) {
+                if (isApproximationColor(fillmin - 4)) {
+                    fill(fillmin - 4);
+                }
+                else {
+                    break;
+                }
+            }
+            fill(redIndex);
+            fillmin = fillmin > min ? fillmin : min;
+            fillmax = fillmax < max ? fillmax : max;
+            return { fillmin: fillmin, fillmax: fillmax };
+        }
+        await new Promise((resolve, reject) => {
+            const seed=scanToLeftRightfromSeed(firstRedPos);
+            createSeedfromOldMinMax(seed.fillmin, seed.fillmax);
+            while(buffer.length>0){
+                const point = buffer.pop();
+                const seed=scanToLeftRightfromSeed(point);
+                createSeedfromOldMinMax(seed.fillmin, seed.fillmax);
+            }
+            resolve();
+        })
+        return new GAZ(newImageData, Context);
+    }
 }
