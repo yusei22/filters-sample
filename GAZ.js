@@ -10,15 +10,19 @@ export class GAZ {
         this.ImageData = ImageData;
         this.Context = Context;
     };
-    static getColorDistance(color1,color2) {
+    static getColorDistance(color1, color2) {
         const red = 0.3;
         const green = 0.59;
         const blue = 0.11;
         const distance = Math.pow(((color2[0] - color1[0]) * red), 2) + Math.pow(((color2[1] - color1[1]) * green), 2) + Math.pow(((color2[2] - color1[2]) * blue), 2);
         return distance;
     };
+    clear(ImageData = this.ImageData, Context = this.Context){
+        const newImageData = Context.createImageData(ImageData);
+        return new GAZ(newImageData, Context);
+    }
     Duplicate(ImageData = this.ImageData, Context = this.Context) {
-        if(!Checker.imageData.isImageData(ImageData)){return false};
+        if (!Checker.imageData.isImageData(ImageData)) { return false };
         const Duplication = Context.createImageData(ImageData);
         const DuplicationPixcelData = Duplication.data
         const PixcelData = ImageData.data;
@@ -103,35 +107,35 @@ export class GAZ {
         const newImageData = this.Duplicate(ImageData, Context).ImageData;
         const newData = newImageData.data;
         const sharpedColor = (color, i) => {
-          // 係数
-          const sub = -1;
-          const main = 10;
-    
-          const prevLine = i - (ImageData.width * 4);
-          const nextLine = i + (ImageData.width * 4);
-    
-          const sumPrevLineColor = (oldData[prevLine - 4 + color] * sub) + (oldData[prevLine + color] * sub) + (oldData[prevLine + 4 + color] * sub);
-          const sumCurrLineColor = (oldData[i - 4 + color] * sub)        + (oldData[i + color] * main)       + (oldData[i + 4 + color] * sub);
-          const sumNextLineColor = (oldData[nextLine - 4 + color] * sub) + (oldData[nextLine + color] * sub) + (oldData[nextLine + 4 + color] * sub);
-          return (sumPrevLineColor + sumCurrLineColor + sumNextLineColor) / 2
+            // 係数
+            const sub = -1;
+            const main = 10;
+
+            const prevLine = i - (ImageData.width * 4);
+            const nextLine = i + (ImageData.width * 4);
+
+            const sumPrevLineColor = (oldData[prevLine - 4 + color] * sub) + (oldData[prevLine + color] * sub) + (oldData[prevLine + 4 + color] * sub);
+            const sumCurrLineColor = (oldData[i - 4 + color] * sub) + (oldData[i + color] * main) + (oldData[i + 4 + color] * sub);
+            const sumNextLineColor = (oldData[nextLine - 4 + color] * sub) + (oldData[nextLine + color] * sub) + (oldData[nextLine + 4 + color] * sub);
+            return (sumPrevLineColor + sumCurrLineColor + sumNextLineColor) / 2
         };
         await new Promise((resolve, reject) => {
-        // 2行目〜n-1行目
-        for (let i = ImageData.width * 4; i < oldData.length - (ImageData.width * 4); i += 4) {
-            // 2列目〜n-1列目
-            if (i % (ImageData.width * 4) === 0 || i % ((ImageData.width * 4) + 300) === 0) {
-              // nop
-            } else {
-              newData[i] = sharpedColor(0, i);
-              newData[i + 1] = sharpedColor(1, i);
-              newData[i + 2] = sharpedColor(2, i);
-              //data2[i + 3] = 255 * strength*0.01;
-            }
-          };
-          resolve();
+            // 2行目〜n-1行目
+            for (let i = ImageData.width * 4; i < oldData.length - (ImageData.width * 4); i += 4) {
+                // 2列目〜n-1列目
+                if (i % (ImageData.width * 4) === 0 || i % ((ImageData.width * 4) + 300) === 0) {
+                    // nop
+                } else {
+                    newData[i] = sharpedColor(0, i);
+                    newData[i + 1] = sharpedColor(1, i);
+                    newData[i + 2] = sharpedColor(2, i);
+                    //data2[i + 3] = 255 * strength*0.01;
+                }
+            };
+            resolve();
         })
         return new GAZ(newImageData, Context);
-      }
+    }
     async Mosaic(msize, ImageData = this.ImageData, Context = this.Context) {
         const oldData = ImageData.data;
         const newImageData = Context.createImageData(ImageData);
@@ -200,125 +204,125 @@ export class GAZ {
             let aa = new Array();
             let pt = 0;
             for (let y = 0; y < ImageData.height; y++) {
-              ar[y] = new Array();
-              ag[y] = new Array();
-              ab[y] = new Array();
-              aa[y] = new Array();
-              for (let x = 0; x < bsize2; x++) {
-                if(oldData[pt + 3]===0){
-                    ar[y][x]=ag[y][x]=ab[y][x]=255
+                ar[y] = new Array();
+                ag[y] = new Array();
+                ab[y] = new Array();
+                aa[y] = new Array();
+                for (let x = 0; x < bsize2; x++) {
+                    if (oldData[pt + 3] === 0) {
+                        ar[y][x] = ag[y][x] = ab[y][x] = 255
+                    }
+                    else {
+                        ar[y][x] = oldData[pt];
+                        ag[y][x] = oldData[pt + 1];
+                        ab[y][x] = oldData[pt + 2];
+                    }
+                    aa[y][x] = oldData[pt + 3];
                 }
-                else{
-                    ar[y][x] = oldData[pt];
-                    ag[y][x] = oldData[pt + 1];
-                    ab[y][x] = oldData[pt + 2];
+                for (let x = bsize2; x < ImageData.width + bsize2; x++) {
+                    if (oldData[pt + 3] === 0) {
+                        ar[y][x] = ag[y][x] = ab[y][x] = 255
+                    }
+                    else {
+                        ar[y][x] = oldData[pt];
+                        ag[y][x] = oldData[pt + 1];
+                        ab[y][x] = oldData[pt + 2];
+                    }
+                    aa[y][x] = oldData[pt + 3];
+                    pt += 4;
                 }
-                aa[y][x] = oldData[pt + 3];
-              }
-              for (let x = bsize2; x < ImageData.width + bsize2; x++) {
-                if(oldData[pt + 3]===0){
-                    ar[y][x]=ag[y][x]=ab[y][x]=255
+                pt -= 4;
+                for (let x = ImageData.width + bsize2; x < ImageData.width + bsize - 1; x++) {
+                    if (oldData[pt + 3] === 0) {
+                        ar[y][x] = ag[y][x] = ab[y][x] = 255
+                    }
+                    else {
+                        ar[y][x] = oldData[pt];
+                        ag[y][x] = oldData[pt + 1];
+                        ab[y][x] = oldData[pt + 2];
+                    }
+                    aa[y][x] = oldData[pt + 3];
                 }
-                else{
-                    ar[y][x] = oldData[pt];
-                    ag[y][x] = oldData[pt + 1];
-                    ab[y][x] = oldData[pt + 2];
-                }
-                aa[y][x] = oldData[pt + 3];
                 pt += 4;
-              }
-              pt -= 4;
-              for (let x = ImageData.width + bsize2; x < ImageData.width + bsize - 1; x++) {
-                if(oldData[pt + 3]===0){
-                    ar[y][x]=ag[y][x]=ab[y][x]=255
-                }
-                else{
-                    ar[y][x] = oldData[pt];
-                    ag[y][x] = oldData[pt + 1];
-                    ab[y][x] = oldData[pt + 2];
-                }
-                aa[y][x] = oldData[pt + 3];
-              }
-              pt += 4;
             }
-            let br, bg, bb,ba;
+            let br, bg, bb, ba;
             let ar2 = new Array();
             let ag2 = new Array();
             let ab2 = new Array();
             let aa2 = new Array();
             for (let y = bsize2; y < ImageData.height + bsize2; y++) {
-              let y2 = y - bsize2;
-              ar2[y] = new Array();
-              ag2[y] = new Array();
-              ab2[y] = new Array();
-              aa2[y] = new Array();
-              br = bb = bg =ba= 0;
-              for (let x = 0; x < bsize; x++) {
-                br += ar[y2][x];
-                bg += ag[y2][x];
-                bb += ab[y2][x];
-                ba += aa[y2][x];
-              }
-              for (let x = 0; x < ImageData.width; x++) {
-                ar2[y][x] = br;
-                ag2[y][x] = bg;
-                ab2[y][x] = bb;
-                aa2[y][x] = ba;
-                br += ar[y2][x + bsize] - ar[y2][x];
-                bg += ag[y2][x + bsize] - ag[y2][x];
-                bb += ab[y2][x + bsize] - ab[y2][x];
-                ba += aa[y2][x + bsize] - aa[y2][x];
-              }
+                let y2 = y - bsize2;
+                ar2[y] = new Array();
+                ag2[y] = new Array();
+                ab2[y] = new Array();
+                aa2[y] = new Array();
+                br = bb = bg = ba = 0;
+                for (let x = 0; x < bsize; x++) {
+                    br += ar[y2][x];
+                    bg += ag[y2][x];
+                    bb += ab[y2][x];
+                    ba += aa[y2][x];
+                }
+                for (let x = 0; x < ImageData.width; x++) {
+                    ar2[y][x] = br;
+                    ag2[y][x] = bg;
+                    ab2[y][x] = bb;
+                    aa2[y][x] = ba;
+                    br += ar[y2][x + bsize] - ar[y2][x];
+                    bg += ag[y2][x + bsize] - ag[y2][x];
+                    bb += ab[y2][x + bsize] - ab[y2][x];
+                    ba += aa[y2][x + bsize] - aa[y2][x];
+                }
             }
             for (let y = 0; y < bsize2; y++) {
-              ar2[y] = new Array();
-              ag2[y] = new Array();
-              ab2[y] = new Array();
-              aa2[y] = new Array();
-              for (let x = 0; x < ImageData.width; x++) {
-                ar2[y][x] = ar2[bsize2][x];
-                ag2[y][x] = ag2[bsize2][x];
-                ab2[y][x] = ab2[bsize2][x];
-                aa2[y][x] = aa2[bsize2][x];
-              }
+                ar2[y] = new Array();
+                ag2[y] = new Array();
+                ab2[y] = new Array();
+                aa2[y] = new Array();
+                for (let x = 0; x < ImageData.width; x++) {
+                    ar2[y][x] = ar2[bsize2][x];
+                    ag2[y][x] = ag2[bsize2][x];
+                    ab2[y][x] = ab2[bsize2][x];
+                    aa2[y][x] = aa2[bsize2][x];
+                }
             }
             for (let y = ImageData.height + bsize2; y < ImageData.height + bsize; y++) {
-              ar2[y] = new Array();
-              ag2[y] = new Array();
-              ab2[y] = new Array();
-              aa2[y] = new Array();
-              for (let x = 0; x < ImageData.width; x++) {
-                ar2[y][x] = ar2[ImageData.height][x];
-                ag2[y][x] = ag2[ImageData.height][x];
-                ab2[y][x] = ab2[ImageData.height][x];
-                aa2[y][x] = aa2[ImageData.height][x];
-              }
+                ar2[y] = new Array();
+                ag2[y] = new Array();
+                ab2[y] = new Array();
+                aa2[y] = new Array();
+                for (let x = 0; x < ImageData.width; x++) {
+                    ar2[y][x] = ar2[ImageData.height][x];
+                    ag2[y][x] = ag2[ImageData.height][x];
+                    ab2[y][x] = ab2[ImageData.height][x];
+                    aa2[y][x] = aa2[ImageData.height][x];
+                }
             }
             for (let x = 0; x < ImageData.width; x++) {
-              pt = 4 * x;
-              br = bb = bg =ba= 0;
-              for (let y = 0; y < bsize; y++) {
-                br += ar2[y][x];
-                bg += ag2[y][x];
-                bb += ab2[y][x];
-                ba += aa2[y][x];
-              }
-              for (let y = 0; y < ImageData.height; y++) {
-                newData[pt] = Math.floor(br / dotnum);
-                newData[pt + 1] = Math.floor(bg / dotnum);
-                newData[pt + 2] = Math.floor(bb / dotnum);
-                newData[pt + 3] = Math.floor(ba / dotnum);
-                pt += ImageData.width * 4;
-                br += ar2[y + bsize][x] - ar2[y][x];
-                bg += ag2[y + bsize][x] - ag2[y][x];
-                bb += ab2[y + bsize][x] - ab2[y][x];
-                ba += aa2[y + bsize][x] - aa2[y][x];
-              }
+                pt = 4 * x;
+                br = bb = bg = ba = 0;
+                for (let y = 0; y < bsize; y++) {
+                    br += ar2[y][x];
+                    bg += ag2[y][x];
+                    bb += ab2[y][x];
+                    ba += aa2[y][x];
+                }
+                for (let y = 0; y < ImageData.height; y++) {
+                    newData[pt] = Math.floor(br / dotnum);
+                    newData[pt + 1] = Math.floor(bg / dotnum);
+                    newData[pt + 2] = Math.floor(bb / dotnum);
+                    newData[pt + 3] = Math.floor(ba / dotnum);
+                    pt += ImageData.width * 4;
+                    br += ar2[y + bsize][x] - ar2[y][x];
+                    bg += ag2[y + bsize][x] - ag2[y][x];
+                    bb += ab2[y + bsize][x] - ab2[y][x];
+                    ba += aa2[y + bsize][x] - aa2[y][x];
+                }
             }
             resolve();
         })
         return new GAZ(newImageData, Context);
-      }
+    }
     async ScanlineSeedFill({ x = 0, y = 0, ImageData = this.ImageData, Context = this.Context, difference = 100, colorAfterApplying = [0, 0, 0, 0] }) {
         const getColorDistance = GAZ.getColorDistance;
         const newImageData = this.Duplicate(ImageData, Context).ImageData;
@@ -329,7 +333,7 @@ export class GAZ {
         const firstRedPos = this.getColorIndicesForCoord(x, y);
         const dmRGB = newdata.slice(firstRedPos, firstRedPos + 4)
         const aaRGB = Checker.array.allTypesAre(colorAfterApplying, 'number') ? colorAfterApplying : [0, 0, 0, 0];
-        let Bbuffer=[];
+        let Bbuffer = [];
         //let inProcess = new Array(width * height);
         //inProcess.fill(false);
         const lightDifference = difference < 125 ? difference : 124;
@@ -449,7 +453,7 @@ export class GAZ {
     }
     async ScanlineSeedFill_NoRecursion({ x = 0, y = 0, ImageData = this.ImageData, Context = this.Context, difference = 100, colorAfterApplying = [0, 0, 0, 0] }) {
         const getColorDistance = GAZ.getColorDistance;
-        if(Checker.imageData.isImageData(ImageData)){console.error(CreateMassage.error.ArgumentMustBe(ImageData))}
+        if (!Checker.imageData.isImageData(ImageData)) { console.error(CreateMassage.error.ArgumentMustBe('ImageData')) }
         const newImageData = this.Duplicate(ImageData, Context).ImageData;
         const newdata = newImageData.data;
         const width = newImageData.width;
@@ -457,10 +461,10 @@ export class GAZ {
         const datawidth = width * 4
         const firstRedPos = this.getColorIndicesForCoord(x, y);
         const dmRGB = newdata.slice(firstRedPos, firstRedPos + 4)
-        const trimEntryedRGB=TrimEntry.RGB(colorAfterApplying);
-        const aaRGB = [trimEntryedRGB.R,trimEntryedRGB.G,trimEntryedRGB.B,trimEntryedRGB.A]
+        const trimEntryedRGB = TrimEntry.RGB(colorAfterApplying);
+        const aaRGB = [trimEntryedRGB.R, trimEntryedRGB.G, trimEntryedRGB.B, trimEntryedRGB.A]
         //ここにためて再帰関数使わんでいいようにする!
-        let buffer=[];
+        let buffer = [];
         const lightDifference = difference
         const indexRightmostColumn = (i) => {
             return datawidth - (i % datawidth) + i - 4;
@@ -499,35 +503,35 @@ export class GAZ {
             }
         }
         function createSeedfromOldMinMax(redIndex_min, redIndex_max) {
-            function top(){
+            function top() {
                 let trueWasIs = false;
                 for (let i = redIndex_min - datawidth; i <= redIndex_max - datawidth; i += 4) {
                     if (isApproximationColor(i)) {
                         trueWasIs = true;
                     }
                     else {
-                        const insertIndex=i - 4
-                        if (trueWasIs&&!isMatchColor(insertIndex)) { buffer.push(insertIndex) }
+                        const insertIndex = i - 4
+                        if (trueWasIs && !isMatchColor(insertIndex)) { buffer.push(insertIndex) }
                         trueWasIs = false;
                     }
                 }
-                const insertIndex=redIndex_max - datawidth;
-                if (trueWasIs&&!isMatchColor(insertIndex)) { buffer.push(insertIndex) };
+                const insertIndex = redIndex_max - datawidth;
+                if (trueWasIs && !isMatchColor(insertIndex)) { buffer.push(insertIndex) };
             }
-            function buttom(){
+            function buttom() {
                 let trueWasIs = false;
                 for (let i = redIndex_min + datawidth; i <= redIndex_max + datawidth; i += 4) {
                     if (isApproximationColor(i)) {
                         trueWasIs = true;
                     }
                     else {
-                        const insertIndex=i - 4
-                        if (trueWasIs&&!isMatchColor(insertIndex)) { buffer.push(insertIndex) }
+                        const insertIndex = i - 4
+                        if (trueWasIs && !isMatchColor(insertIndex)) { buffer.push(insertIndex) }
                         trueWasIs = false;
                     }
                 }
-                const insertIndex=redIndex_max + datawidth
-                if (trueWasIs&&!isMatchColor(insertIndex)) { buffer.push(insertIndex) };
+                const insertIndex = redIndex_max + datawidth
+                if (trueWasIs && !isMatchColor(insertIndex)) { buffer.push(insertIndex) };
             }
             top();
             buttom();
@@ -563,15 +567,33 @@ export class GAZ {
             return { fillmin: fillmin, fillmax: fillmax };
         }
         await new Promise((resolve, reject) => {
-            const seed=scanToLeftRightfromSeed(firstRedPos);
+            const seed = scanToLeftRightfromSeed(firstRedPos);
             createSeedfromOldMinMax(seed.fillmin, seed.fillmax);
-            while(buffer.length>0){
+            while (buffer.length > 0) {
                 const point = buffer.pop();
-                const seed=scanToLeftRightfromSeed(point);
+                const seed = scanToLeftRightfromSeed(point);
                 createSeedfromOldMinMax(seed.fillmin, seed.fillmax);
             }
             resolve();
         })
         return new GAZ(newImageData, Context);
+    }
+    getAmbientColor(size, ImageData = this.ImageData, Context = this.Context) {
+        const oldData = ImageData.data;
+        const newImageData = Context.createImageData(ImageData);
+        const newData = newImageData.data;
+        const width = ImageData.width;
+        const height = ImageData.height;
+        const dataLength = oldData.length;
+        const datawidth = width * 4
+        const bsize=size;
+        let lineMinutesBuffer = [];
+        for (let y = 0; y < height; y++) {
+            let kernelSize= bsize*bsize
+            if(y<bsize){kernelSize-=kernelSize-(y*bsize)}
+            else if(y>=height-bsize){kernelSize-=1}
+            for (x = 0; x < height; x++) {
+            }
+        }
     }
 }

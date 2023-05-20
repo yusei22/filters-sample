@@ -15,7 +15,7 @@
         <br>
         スキャン・シード・フィル アルゴリズムによる背景透過・削除/領域の塗りつぶし
     </h2>
-    <div class="canvas-wrapper">
+    <div id="canvas-wrapper" class="itimatsu-lite">
         <canvas id="canvas_main"></canvas>
     </div>
     <section class="container">
@@ -26,13 +26,18 @@
         <button id="forward">やり直し</button>
         <button id="clear">クリア</button>
         <a href="#" id="downloadbtn" class="btn">ダウンロード</a>
+        <button id="toDark">■□</button>
+        <button id="zoom">+</button>
+        <button id="zoomout">-</button>
     </section>
     <section class="container">
         <h3>設定</h3>
         <div class="box">
             <label for="differenceRange_range">許容する色差の範囲:</label>
-            <input type="range" id="differenceRange_range" name="differenceRange_range" min="0" max="500" step="1"value="100">
-            <input type="number" id="differenceRange_number" name="differenceRange_number" min="0" max="500" step="1"value="100">
+            <input type="range" id="differenceRange_range" name="differenceRange_range" min="0" max="500" step="1"
+                value="100">
+            <input type="number" id="differenceRange_number" name="differenceRange_number" min="0" max="500" step="1"
+                value="100">
         </div>
         <div class="box">
             <label for="favorite_color">塗りつぶしの色を選択:</label>
@@ -75,9 +80,13 @@
     </section>
     <script type="module">
         import { GAZ } from '../GAZ.js'
-        const selFile = document.getElementById('selectFile'); // input type="file"の要素取得;
+        const selFile = document.getElementById('selectFile');
         const canvas = document.querySelector('#canvas_main');
         const context = canvas.getContext('2d');
+        const canvasWrapper = document.querySelector('#canvas-wrapper');
+        let canvasCSize = {
+            width: canvas.width,
+        }
         const encodingOptionsEl = {
             fileType: document.getElementById('file_type'),
             quality_range: document.getElementById('quality_range'),
@@ -121,7 +130,8 @@
             }
         }
         function clear() {
-            context.clearRect(0, 0, canvas.width, canvas.height);
+            const newGAZ = history[historyIndex].clear();
+            ApplyGAZInstance(newGAZ)
         }
         const removeFileEX = (fileName) => {
             return fileName.replace(/\.[^/.]+$/, "")
@@ -134,30 +144,53 @@
                 return parseInt(str, 16);
             });
         }
+        function zoom() {
+            canvasCSize.width += 200;
+            canvas.style.width = `${canvasCSize.width}px`;
+        }
+        function zoomout() {
+            canvasCSize.width -= 200;
+            canvas.style.width = `${canvasCSize.width}px`;
+        }
+        function toDark() {
+            canvasWrapper.classList.toggle('itimatsu-dark')
+        }
+        function ApplyGAZInstance(newGAZ){
+            context.putImageData(newGAZ.ImageData, 0, 0);
+            history.unshift(newGAZ);
+            historyIndex = 0;
+            if (history.length > 10) {
+                history.pop();
+            }
+        }
         window.addEventListener('DOMContentLoaded', function (e) {
+            document.getElementById('toDark').addEventListener('click', toDark);
             selFile.addEventListener("change", async function (e) {
                 const loadedfile = e.target.files[0];
                 const reader = new FileReader();
                 reader.readAsDataURL(loadedfile);
                 reader.onload = () => {
-                    const dataUrl = reader.result; // 読み込んだファイルURL
-                    const img = new Image(); // 画像
+                    const dataUrl = reader.result;
+                    const img = new Image();
                     img.src = dataUrl;
                     img.onload = () => {
                         canvas.width = img.width;
                         canvas.height = img.height;
+                        canvas.style.width = `${canvas.width}px`;
+                        canvasCSize.width = canvas.width;
                         context.drawImage(img, 0, 0);
                         const imageData = context.getImageData(0, 0, img.width, img.height);
-                        const data = imageData.data;//一次元配列を返す
+                        const data = imageData.data;
                         const renderer = new GAZ(imageData, context);
                         history.unshift(renderer);
                         canvas.addEventListener("click", function (e) {
                             const mouse_pos = {
-                                x: parseInt(e.offsetX),
-                                y: parseInt(e.offsetY),
+                                x: Math.floor(parseInt(e.offsetX, 10) * canvas.width / parseInt(canvas.offsetWidth, 10)),
+                                y: Math.floor(parseInt(e.offsetY, 10) * canvas.height / parseInt(canvas.offsetHeight, 10)),
                             };
+                            console.log(mouse_pos)
                             console.log(settingsEL.transparency_range.value)
-                            const transparency = Math.floor(255 * parseInt(settingsEL.transparency_range.value, 10)*0.01)
+                            const transparency = Math.floor(255 * parseInt(settingsEL.transparency_range.value, 10) * 0.01)
                             const color = hex2rgb(settingsEL.favorite_color.value).concat([transparency]);
                             history[historyIndex].ScanlineSeedFill_NoRecursion({
                                 x: mouse_pos.x,
@@ -166,13 +199,7 @@
                                 colorAfterApplying: color,
                             })
                                 .then(newGAZ => {
-                                    context.putImageData(newGAZ.ImageData, 0, 0);
-                                    history.unshift(newGAZ);
-                                    historyIndex=0;
-                                    if (history.length > 10) {
-                                        history.pop();
-                                    }
-
+                                    ApplyGAZInstance(newGAZ)
                                 })
 
                         })
@@ -180,6 +207,8 @@
                         document.getElementById('forward').addEventListener('click', forward);
                         document.getElementById('back').addEventListener('click', back);
                         document.getElementById('clear').addEventListener('click', clear);
+                        document.getElementById('zoom').addEventListener('click', zoom);
+                        document.getElementById('zoomout').addEventListener('click', zoomout);
                         const a = document.getElementById('downloadbtn');
                         a.addEventListener('click', (e) => {
                             let newfileName;
