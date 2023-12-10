@@ -1,10 +1,7 @@
 import *as Checker from './parts/type-checker.js';
 import *as CreateMassage from './parts/message.js';
 import *as TrimEntry from './parts/trim-entry.js';
-/**
-await new Promise((resolve, reject) => {})
-*/
-export class GAZ {
+export class Filters {
     constructor(ImageData, Context) {
         Checker.imageData.isImageData(ImageData);
         this.ImageData = ImageData;
@@ -17,9 +14,9 @@ export class GAZ {
         const distance = Math.pow(((color2[0] - color1[0]) * red), 2) + Math.pow(((color2[1] - color1[1]) * green), 2) + Math.pow(((color2[2] - color1[2]) * blue), 2);
         return distance;
     };
-    clear(ImageData = this.ImageData, Context = this.Context){
+    clear(ImageData = this.ImageData, Context = this.Context) {
         const newImageData = Context.createImageData(ImageData);
-        return new GAZ(newImageData, Context);
+        return new Filters(newImageData, Context);
     }
     Duplicate(ImageData = this.ImageData, Context = this.Context) {
         if (!Checker.imageData.isImageData(ImageData)) { return false };
@@ -29,7 +26,7 @@ export class GAZ {
         for (let i = 0; i < PixcelData.length; i++) {
             DuplicationPixcelData[i] = PixcelData[i];
         }
-        return new GAZ(Duplication, Context);
+        return new Filters(Duplication, Context);
     };
     getColorIndicesForCoord(x, y, width = this.ImageData.width) {
         const redIndices = y * (width * 4) + x * 4;
@@ -47,7 +44,7 @@ export class GAZ {
             }
             resolve();
         });
-        return new GAZ(newImageData, Context);
+        return new Filters(newImageData, Context);
     }
     async NegativePositive(ImageData = this.ImageData, Context = this.Context) {
         const oldData = ImageData.data;
@@ -62,7 +59,7 @@ export class GAZ {
             }
             resolve();
         })
-        return new GAZ(newImageData, Context);
+        return new Filters(newImageData, Context);
     }
     async Binarization(ImageData = this.ImageData, Context = this.Context) {
         const oldData = ImageData.data;
@@ -87,7 +84,7 @@ export class GAZ {
             }
             resolve();
         })
-        return new GAZ(newImageData, Context);
+        return new Filters(newImageData, Context);
     }
     async GammaCorrection(gamma, ImageData = this.ImageData, Context = this.Context) {
         const oldData = ImageData.data;
@@ -134,7 +131,7 @@ export class GAZ {
             };
             resolve();
         })
-        return new GAZ(newImageData, Context);
+        return new Filters(newImageData, Context);
     }
     async Mosaic(msize, ImageData = this.ImageData, Context = this.Context) {
         const oldData = ImageData.data;
@@ -188,7 +185,7 @@ export class GAZ {
             resolve();
         })
 
-        return new GAZ(newImageData, Context);
+        return new Filters(newImageData, Context);
     }
     async Blur(bsize, ImageData = this.ImageData, Context = this.Context) {
         // ぼかしの点の数
@@ -321,10 +318,10 @@ export class GAZ {
             }
             resolve();
         })
-        return new GAZ(newImageData, Context);
+        return new Filters(newImageData, Context);
     }
     async ScanlineSeedFill({ x = 0, y = 0, ImageData = this.ImageData, Context = this.Context, difference = 100, colorAfterApplying = [0, 0, 0, 0] }) {
-        const getColorDistance = GAZ.getColorDistance;
+        const getColorDistance = Filters.getColorDistance;
         const newImageData = this.Duplicate(ImageData, Context).ImageData;
         const newdata = newImageData.data;
         const width = newImageData.width;
@@ -442,17 +439,17 @@ export class GAZ {
                 resolve();
             })
                 .catch((e) => {
-                    newGAZ = new GAZ(newImageData, Context);
+                    newGAZ = new Filters(newImageData, Context);
                 })
                 .then(() => {
-                    newGAZ = new GAZ(newImageData, Context);
+                    newGAZ = new Filters(newImageData, Context);
                 })
         }
         return newGAZ;
 
     }
     async ScanlineSeedFill_NoRecursion({ x = 0, y = 0, ImageData = this.ImageData, Context = this.Context, difference = 100, colorAfterApplying = [0, 0, 0, 0] }) {
-        const getColorDistance = GAZ.getColorDistance;
+        const getColorDistance = Filters.getColorDistance;
         if (!Checker.imageData.isImageData(ImageData)) { console.error(CreateMassage.error.ArgumentMustBe('ImageData')) }
         const newImageData = this.Duplicate(ImageData, Context).ImageData;
         const newdata = newImageData.data;
@@ -463,7 +460,7 @@ export class GAZ {
         const dmRGB = newdata.slice(firstRedPos, firstRedPos + 4)
         const trimEntryedRGB = TrimEntry.RGB(colorAfterApplying);
         const aaRGB = [trimEntryedRGB.R, trimEntryedRGB.G, trimEntryedRGB.B, trimEntryedRGB.A]
-        //ここにためて再帰関数使わんでいいようにする!
+        //ここにためて再帰関数使わんでいいようにする
         let buffer = [];
         const lightDifference = difference
         const indexRightmostColumn = (i) => {
@@ -576,7 +573,7 @@ export class GAZ {
             }
             resolve();
         })
-        return new GAZ(newImageData, Context);
+        return new Filters(newImageData, Context);
     }
     getAmbientColor(size, ImageData = this.ImageData, Context = this.Context) {
         const oldData = ImageData.data;
@@ -586,12 +583,12 @@ export class GAZ {
         const height = ImageData.height;
         const dataLength = oldData.length;
         const datawidth = width * 4
-        const bsize=size;
+        const bsize = size;
         let lineMinutesBuffer = [];
         for (let y = 0; y < height; y++) {
-            let kernelSize= bsize*bsize
-            if(y<bsize){kernelSize-=kernelSize-(y*bsize)}
-            else if(y>=height-bsize){kernelSize-=1}
+            let kernelSize = bsize * bsize
+            if (y < bsize) { kernelSize -= kernelSize - (y * bsize) }
+            else if (y >= height - bsize) { kernelSize -= 1 }
             for (x = 0; x < height; x++) {
             }
         }
