@@ -11,11 +11,9 @@
 
 <body>
     <h2>
-        GAZ.jsのデモ②
-        <br>
-        よくあるフィルタ
+        DEMO
     </h2>
-    <div id="canvas-wrapper"class="itimatsu-lite">
+    <div id="canvas-wrapper" class="itimatsu-lite">
         <canvas id="canvas_main"></canvas>
     </div>
     <br>
@@ -23,7 +21,7 @@
         <input type="file" id="selectFile" accept="image/jpeg,image/png,image/webp">
     </section>
     <script type="module">
-        import { GAZ } from '../GAZ.js'
+        import { Filters } from '../Filters'
         const selFile = document.getElementById('selectFile'); // input type="file"の要素取得;
         const canvas = document.querySelector('#canvas_main');
         const context = canvas.getContext('2d');
@@ -44,11 +42,13 @@
                         context.drawImage(img, 0, 0);
                         const imageData = context.getImageData(0, 0, img.width, img.height);
                         const data = imageData.data;
-                        const renderer = new GAZ(imageData, context);
+                        const renderer = new Filters(imageData, context);
                         history.unshift(renderer);
                         canvas.addEventListener("click", function (e) {
-                            history[0].Sharpening()
+                            console.time('Blur')
+                            history[0].Mosaic(50)
                                 .then(newGAZ => {
+                                    console.timeEnd('Blur')
                                     context.putImageData(newGAZ.ImageData, 0, 0);
                                     history.unshift(newGAZ);
                                     if (history.length > 10) {
