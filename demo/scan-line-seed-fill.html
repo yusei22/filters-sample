@@ -6,12 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <title>GAZ_demo_ScanlineSeedFill</title>
+    <title>demo-scanline-seed-fill</title>
 </head>
 
 <body>
     <h2>
-        GAZ.jsのデモ①
+        DEMO #1
         <br>
         スキャン・シード・フィル アルゴリズムによる背景透過・削除/領域の塗りつぶし
     </h2>
@@ -79,7 +79,7 @@
         </div>
     </section>
     <script type="module">
-        import { GAZ } from '../GAZ.js'
+        import { Filters } from '../Filters.js'
         const selFile = document.getElementById('selectFile');
         const canvas = document.querySelector('#canvas_main');
         const context = canvas.getContext('2d');
@@ -181,7 +181,7 @@
                         context.drawImage(img, 0, 0);
                         const imageData = context.getImageData(0, 0, img.width, img.height);
                         const data = imageData.data;
-                        const renderer = new GAZ(imageData, context);
+                        const renderer = new Filters(imageData, context);
                         history.unshift(renderer);
                         canvas.addEventListener("click", function (e) {
                             const mouse_pos = {
