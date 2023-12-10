@@ -1,6 +1,6 @@
-import *as Checker from './parts/type-checker.js';
-import *as CreateMassage from './parts/message.js';
-import *as TrimEntry from './parts/trim-entry.js';
+import *as Checker from './utils/typeChecker.js'
+import *as CreateMassage from './utils/messenger.js';
+import *as TrimEntry from './utils/trimEntry.js';
 export class Filters {
     constructor(ImageData, Context) {
         Checker.imageData.isImageData(ImageData);
